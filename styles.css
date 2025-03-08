@@ -1,0 +1,151 @@
+body,
+* {
+  overflow: hidden;
+}
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #000;
+  color: #39ff14; /* Neon green color */
+  font-family: "Courier New", monospace;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Neon background effects */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+      circle at 20% 30%,
+      rgba(57, 255, 20, 0.15) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(57, 255, 20, 0.1) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(0, 0, 0, 1) 30%,
+      rgba(10, 20, 10, 0.8) 100%
+    );
+  z-index: -1;
+}
+
+/* Grid lines background effect */
+body::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+        90deg,
+        rgba(57, 255, 20, 0.05) 1px,
+        transparent 1px
+      )
+      0 0 / 40px 40px,
+    linear-gradient(0deg, rgba(57, 255, 20, 0.05) 1px, transparent 1px) 0 0 /
+      40px 40px;
+  z-index: -1;
+}
+
+.content-wrapper {
+  width: 90%;
+  max-width: 1200px;
+  text-align: center;
+  padding: 20px;
+  border-radius: 10px;
+  background: rgba(0, 10, 0, 0.7);
+  box-shadow: 0 0 30px rgba(57, 255, 20, 0.3);
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+.ascii-art {
+  white-space: pre;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.2;
+  text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14,
+    0 0 40px #39ff14, 0 0 80px rgba(57, 255, 20, 0.6);
+  overflow-x: auto;
+  position: relative;
+}
+
+.github-link {
+  margin-top: 30px;
+  font-size: 20px;
+  color: #39ff14;
+  text-decoration: none;
+  text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14;
+
+  padding: 10px 20px;
+  border: 1px solid rgba(57, 255, 20, 0.4);
+  border-radius: 30px;
+  transition: all 0.3s ease;
+  background: rgba(10, 30, 10, 0.3);
+  display: inline-block;
+}
+
+.github-link:hover {
+  text-decoration: none;
+  text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 40px #39ff14;
+  background: rgba(20, 60, 20, 0.4);
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.5);
+  transform: scale(1.05);
+}
+
+/* Better responsive adjustments */
+@media (max-width: 1200px) {
+  .ascii-art {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 992px) {
+  .ascii-art {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ascii-art {
+    font-size: 8px;
+  }
+  .github-link {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 576px) {
+  .ascii-art {
+    font-size: 6px;
+  }
+  .github-link {
+    font-size: 16px;
+    padding: 8px 16px;
+  }
+  .content-wrapper {
+    padding: 10px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 380px) {
+  .ascii-art {
+    font-size: 4.5px;
+  }
+}
