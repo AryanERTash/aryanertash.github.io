@@ -2,442 +2,331 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<link rel="icon" type="image/png" href="InfoSarthi64.png">
-
-	<title>InfoSarthi Minimal Chatbot</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+	<link rel="icon" href="InfoSarthi64.png" type="image/png">
+	<title>InfoSarthi Chat</title>
 	<style>
+		:root {
+			--bg: #0b0b0c;
+			--panel: #0f1112;
+			--muted: #9aa1a6;
+			--accent: #7c4dff;
+			--glass: rgba(255, 255, 255, 0.03);
+			--radius: 16px;
+			--shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+			--monospace: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+		}
+
 		body {
-			font-family: Arial, sans-serif;
-			margin: 20px;
-			background: #f0f8ff;
+			margin: 0;
+			font-family: Inter, system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+			background: var(--bg);
+			color: #e6eef6;
+		}
+
+		.app {
+			display: flex;
+			flex-direction: column;
+			max-width: 900px;
+			margin: 20px auto;
+			padding: 16px;
+			border-radius: 16px;
+			background: var(--panel);
+			box-shadow: var(--shadow);
+			height: 95vh;
+		}
+
+		header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 16px;
 		}
 
 		h1 {
-			color: #1f4e79;
+			font-size: 18px;
+			margin: 0;
 		}
 
-		textarea,
-		button {
-			width: 100%;
-			padding: 10px;
-			margin: 10px 0;
-			font-size: 16px;
+		.history-list {
+			background: var(--glass);
+			padding: 12px;
+			border-radius: 12px;
+			max-height: 180px;
+			overflow: auto;
+			margin-bottom: 12px;
 		}
 
-		#response {
+		.history-item {
+			padding: 8px;
+			border-radius: 10px;
+			margin-bottom: 6px;
+			cursor: pointer;
+			border: 1px solid transparent;
+		}
+
+		.history-item:hover {
+			border-color: rgba(255, 255, 255, 0.03);
+		}
+
+		.messages {
+			background: var(--glass);
+			flex: 1;
+			padding: 16px;
+			border-radius: 12px;
+			overflow-y: auto;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.message {
+			max-width: 80%;
+			padding: 12px;
+			border-radius: 12px;
+			line-height: 1.5;
 			white-space: pre-wrap;
-			padding: 10px;
-			border: 1px solid #ccc;
-			min-height: 100px;
-			background: #fff;
 		}
 
-		canvas {
-			max-width: 400px;
-			margin-top: 20px;
+		.message.user {
+			align-self: flex-end;
+			background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+			border: 1px solid rgba(255, 255, 255, 0.03);
+		}
+
+		.message.assistant {
+			align-self: flex-start;
+			background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent);
+			border: 1px solid rgba(255, 255, 255, 0.02);
+			color: var(--muted);
+		}
+
+		.message.assistant.typing {
+			position: relative;
+		}
+
+		.message.assistant.typing::after {
+			content: '|';
+			animation: blink 1s infinite;
+			color: var(--accent);
+		}
+
+		@keyframes blink {
+
+			0%,
+			50% {
+				opacity: 1;
+			}
+
+			51%,
+			100% {
+				opacity: 0;
+			}
+		}
+
+		textarea {
+			flex: 1;
+			border-radius: 12px;
+			padding: 12px;
+			background: transparent;
+			border: 1px solid rgba(255, 255, 255, 0.03);
+			color: #fff;
+			resize: vertical;
+			min-height: 56px;
+		}
+
+		.composer {
+			display: flex;
+			gap: 8px;
+			align-items: end;
+			margin-top: 8px;
+		}
+
+		button.primary {
+			background: var(--accent);
+			color: #fff;
+			border: none;
+			padding: 10px 16px;
+			border-radius: 12px;
+			cursor: pointer;
+		}
+
+		button.danger {
+			background: transparent;
+			color: #ff7b7b;
+			border: 1px solid rgba(255, 0, 0, 0.2);
+			padding: 8px 12px;
+			border-radius: 12px;
+			cursor: pointer;
+		}
+
+		kbd {
+			padding: 6px 8px;
+			border-radius: 8px;
+			background: rgba(255, 255, 255, 0.02);
+			border: 1px solid rgba(255, 255, 255, 0.02);
+			font-family: var(--monospace);
+			font-size: 12px;
+		}
+
+		@media (max-width:840px) {
+			.composer {
+				flex-direction: column;
+			}
 		}
 	</style>
-	<!-- Bootstrap CSS -->
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-	<!-- Tailwind via CDN (preflight minimal) -->
-	<script src="https://cdn.tailwindcss.com"></script>
-	<!-- React -->
-	<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-	<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-	<!-- Plotly.js -->
-	<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-	<!-- Leaflet (GIS) -->
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-	<!-- LocalForage for caching -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-	<!-- Socket.IO client (placeholder; using WS feed already) -->
-	<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 
 <body>
-	<div id="root"></div>
+	<div class="app">
+		<header>
+			<h1>InfoSarthi GroundWater Chat</h1>
+			<button class="danger" id="clearHistory">Clear History</button>
+		</header>
+		<div class="history-list" id="historyList"></div>
+		<div class="messages" id="messages"></div>
+		<div class="composer">
+			<textarea id="prompt" placeholder="Type a message... (Shift+Enter = newline)">Hello who are you??</textarea>
+			<button class="primary" id="sendBtn">Send</button>
+		</div>
+		<div style="margin-top:6px;">
+			<kbd>Enter = Send</kbd> <kbd>Shift+Enter = Newline</kbd>
+		</div>
+	</div>
 
-	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-	<script src="https://d3js.org/d3.v7.min.js"></script>
 	<script>
-		// No API keys in the browser. Calls go to local proxy.
-		const OPENAI_API_KEY = "";
+		const STORAGE_KEY = 'infosarthi.gemini.chat';
+		const messagesEl = document.getElementById('messages');
+		const historyListEl = document.getElementById('historyList');
+		const promptEl = document.getElementById('prompt');
+		const sendBtn = document.getElementById('sendBtn');
+		const clearHistoryBtn = document.getElementById('clearHistory');
 
-		// Client now calls local proxy, so no provider logic in browser
-		function getApiConfig() {
-			return {
-				url: 'http://localhost:5057/api/gpt',
-				headers: { 'Content-Type': 'application/json' },
-				model: 'gpt-4o-mini'
-			};
-		}
-		// Simple i18n for UI labels
-		const I18N = {
-			en: { title: 'InfoSarthi AI Dashboard', chat: 'Chat', ask: 'Ask', placeholder: 'Type your question...', live: 'Live WebSocket Feed', d3bar: 'D3 Bar Chart', sample: 'Sample Line (Chart.js)', dataset: 'Dataset Overview', health: 'Health', clear: 'Clear History' },
-			hi: { title: 'इन्फोसरथी एआई डैशबोर्ड', chat: 'चैट', ask: 'पूछें', placeholder: 'अपना प्रश्न लिखें...', live: 'लाइव वेब-सॉकेट फ़ीड', d3bar: 'डी3 बार चार्ट', sample: 'नमूना रेखा (Chart.js)', dataset: 'डेटासेट अवलोकन', health: 'स्थिति', clear: 'इतिहास साफ़ करें' },
-			bn: { title: 'ইনফোসারথি এআই ড্যাশবোর্ড', chat: 'চ্যাট', ask: 'জিজ্ঞাসা করুন', placeholder: 'আপনার প্রশ্ন লিখুন...', live: 'লাইভ ওয়েবসকেট ফিড', d3bar: 'D3 বার চার্ট', sample: 'নমুনা লাইন (Chart.js)', dataset: 'ডেটাসেট ওভারভিউ', health: 'স্বাস্থ্য', clear: 'ইতিহাস মুছুন' }
-		};
-		let currentLang = 'en';
-		// React App (no Chakra UI; using Bootstrap/Tailwind only)
-		const e = React.createElement;
+		const API_KEY = 'AIzaSyDXi6vXP6sGK2obbt1e4UCJ3tNYhDC6s_8'; // Replace with your Gemini key
+		const MODEL = 'gemini-2.5-flash';
+		const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 
-		function useWebSocketFeed(url) {
-			const [dataPoints, setDataPoints] = React.useState([]);
-			React.useEffect(() => {
-				let ws;
-				try {
-					ws = new WebSocket(url);
-					ws.onmessage = (evt) => {
-						try {
-							const msg = JSON.parse(evt.data);
-							setDataPoints((prev) => [...prev.slice(-49), msg]);
-						} catch (_) { }
-					};
-				} catch (_) { }
-				return () => { try { ws && ws.close(); } catch (_) { } };
-			}, [url]);
-			return dataPoints;
-		}
+		let history = loadHistory();
+		let currentConversationId = history.length ? history[0].id : createConversation();
+		renderHistory();
+		loadConversation(currentConversationId);
 
-		function ChartSection({ points }) {
-			const canvasRef = React.useRef(null);
-			React.useEffect(() => {
-				const labels = points.map(p => p.tick);
-				const values = points.map(p => p.value);
-				const ctx = canvasRef.current.getContext('2d');
-				if (window.liveChart) window.liveChart.destroy();
-				window.liveChart = new Chart(ctx, {
-					type: 'line',
-					data: { labels, datasets: [{ label: 'Live Value', data: values, borderColor: 'teal', tension: 0.3, fill: false }] },
-					options: { responsive: true }
+		sendBtn.addEventListener('click', sendMessage);
+		promptEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+		clearHistoryBtn.addEventListener('click', () => { if (confirm('Clear all history?')) { history = []; saveHistory(); renderHistory(); messagesEl.innerHTML = ''; currentConversationId = createConversation(); } });
+
+		function createId() { return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+		function createConversation() { const conv = { id: createId(), messages: [], createdAt: Date.now() }; history.unshift(conv); saveHistory(); renderHistory(); return conv.id; }
+		function loadHistory() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch (e) { return []; } }
+		function saveHistory() { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); renderHistory(); }
+		function findConv(id) { return history.find(c => c.id === id); }
+		function renderHistory() { historyListEl.innerHTML = ''; if (!history.length) { historyListEl.innerHTML = '<div class="small" style="color:#9aa1a6">No conversations yet</div>'; return; } history.forEach(c => { const item = document.createElement('div'); item.className = 'history-item'; item.tabIndex = 0; item.textContent = c.messages[0]?.content?.[0]?.text?.slice(0, 36) || 'New conversation'; item.addEventListener('click', () => { currentConversationId = c.id; loadConversation(c.id); }); historyListEl.appendChild(item); }); }
+		function loadConversation(id) { const conv = findConv(id); messagesEl.innerHTML = ''; if (!conv || !conv.messages.length) { messagesEl.innerHTML = '<div class="small" style="color:#9aa1a6">No messages yet</div>'; return; } conv.messages.forEach(m => renderMessage(m.role, m.content)); messagesEl.scrollTop = messagesEl.scrollHeight; }
+		function renderMessage(role, content) {
+			const el = document.createElement('div');
+			el.className = 'message ' + role;
+			if (Array.isArray(content)) {
+				content.forEach(c => {
+					if (c.type === 'text') el.textContent += c.text + '\n';
 				});
-			}, [points]);
-			return e('canvas', { ref: canvasRef, className: 'w-full' });
+			} else {
+				el.textContent = content;
+			}
+			messagesEl.appendChild(el);
+			messagesEl.scrollTop = messagesEl.scrollHeight;
+		}
+		function addMessage(role, content) {
+			const conv = findConv(currentConversationId);
+			conv.messages.push({ role, content, time: Date.now() });
+			saveHistory();
+			if (role === 'assistant') {
+				renderTypingMessage(content);
+			} else {
+				renderMessage(role, content);
+			}
 		}
 
-		function D3Bar({ values }) {
-			const ref = React.useRef(null);
-			React.useEffect(() => {
-				const width = 300, height = 120, margin = 20;
-				const el = ref.current;
-				el.innerHTML = '';
-				const svg = d3.select(el).append('svg').attr('width', width).attr('height', height);
-				const x = d3.scaleBand().domain(values.map((_, i) => i)).range([margin, width - margin]).padding(0.1);
-				const y = d3.scaleLinear().domain([0, d3.max(values) || 1]).range([height - margin, margin]);
-				svg.selectAll('rect').data(values).enter().append('rect')
-					.attr('x', (_, i) => x(i)).attr('y', d => y(d))
-					.attr('width', x.bandwidth()).attr('height', d => (height - margin) - y(d))
-					.attr('fill', '#4f46e5');
-			}, [values]);
-			return e('div', { ref });
-		}
+		// Typewriter effect function
+		function typeWriter(element, text, speed = 10) {
+			return new Promise((resolve) => {
+				let i = 0;
+				element.textContent = '';
+				element.classList.add('typing');
 
-		function App() {
-			const [prompt, setPrompt] = React.useState('Ask about groundwater data...');
-			const [response, setResponse] = React.useState('Response will appear here...');
-			const feed = useWebSocketFeed('ws://localhost:5056');
-			const [lang, setLang] = React.useState('en');
-
-			async function sendPrompt() {
-				const text = (prompt || '').trim();
-				if (!text) { alert('Please enter a query.'); return; }
-				setResponse('Loading...');
-				try {
-					const { url, headers, model } = getApiConfig();
-					const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ model, prompt: text }) });
-					if (!res.ok) {
-						let bodyText = '';
-						try { bodyText = await res.text(); } catch (e) { bodyText = '(no body)'; }
-						setResponse(`HTTP ${res.status} ${res.statusText}\n${bodyText}`);
-						return;
+				function type() {
+					if (i < text.length) {
+						element.textContent += text.charAt(i);
+						i++;
+						setTimeout(type, speed);
+					} else {
+						element.classList.remove('typing');
+						resolve();
 					}
-					const data = await res.json();
-					if (data.answer) setResponse(data.answer);
-					else if (data.error) setResponse('Server Error: ' + data.error);
-					else setResponse('Unexpected response: ' + JSON.stringify(data));
-				} catch (err) {
-					setResponse('Network/JS Error: ' + (err && err.message ? err.message : String(err)));
 				}
-			}
 
-			const values = feed.map(p => p.value);
-
-			return e('div', { className: 'container my-4' },
-				e('div', { className: 'd-flex align-items-center justify-content-between mb-2' },
-					e('h2', { className: 'mb-0 text-indigo-800 fw-semibold' }, (I18N[lang] || I18N.en).title),
-					e('div', { className: 'd-flex align-items-center gap-2' },
-						e('select', { className: 'form-select form-select-sm w-auto', value: lang, onChange: (ev) => { setLang(ev.target.value); currentLang = ev.target.value; setPrompt((I18N[ev.target.value] || I18N.en).placeholder); } },
-							e('option', { value: 'en' }, 'English'),
-							e('option', { value: 'hi' }, 'हिन्दी'),
-							e('option', { value: 'bn' }, 'বাংলা')
-						),
-						e('a', { className: 'btn btn-success btn-sm', href: 'https://wa.me/?text=Hi%20InfoSarthi', target: '_blank' }, 'WhatsApp')
-					)
-				),
-				e('div', { className: 'mb-3' },
-					e('button', {
-						className: 'btn btn-outline-secondary me-2', onClick: async () => {
-							try { const r = await fetch('http://localhost:5057/api/health'); const j = await r.json(); alert('Health: ' + JSON.stringify(j)); } catch (e) { alert('Health error'); }
-						}
-					}, 'Health'),
-					e('button', {
-						className: 'btn btn-outline-danger', onClick: async () => {
-							try { await fetch('http://localhost:5057/api/history', { method: 'DELETE' }); alert('History cleared'); } catch (e) { alert('Clear failed'); }
-						}
-					}, 'Clear History')
-				),
-				e('div', { className: 'row g-3' },
-					e('div', { className: 'col-12 col-lg-6' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('span', { className: 'badge bg-purple-600 text-white mb-2' }, (I18N[lang] || I18N.en).chat),
-								e('textarea', { className: 'form-control', value: prompt, onChange: (e2) => setPrompt(e2.target.value), rows: 4, placeholder: (I18N[lang] || I18N.en).placeholder }),
-								e('button', { className: 'btn btn-teal mt-2 btn-primary', onClick: sendPrompt }, (I18N[lang] || I18N.en).ask),
-								e('div', { className: 'mt-3 p-2 border rounded bg-white' }, response)
-							)
-						)
-					),
-					e('div', { className: 'col-12 col-lg-6' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('span', { className: 'badge bg-primary mb-2' }, (I18N[lang] || I18N.en).live),
-								e(ChartSection, { points: feed }),
-								e('div', { className: 'mt-2 text-muted small' }, `Ticks: ${feed.length}`)
-							)
-						)
-					)
-				),
-				e('div', { className: 'row g-3 mt-2' },
-					e('div', { className: 'col-12 col-lg-6' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('span', { className: 'badge bg-success mb-2' }, (I18N[lang] || I18N.en).d3bar),
-								e(D3Bar, { values: values.slice(-10) })
-							)
-						)
-					),
-					e('div', { className: 'col-12 col-lg-6' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('span', { className: 'badge bg-pink mb-2 bg-pink-500' }, (I18N[lang] || I18N.en).sample),
-								e('canvas', { id: 'staticChart' })
-							)
-						)
-					)
-				),
-				e('div', { className: 'row g-3 mt-2' },
-					e('div', { className: 'col-12' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('div', { className: 'd-flex align-items-center justify-content-between mb-2' },
-									e('span', { className: 'badge bg-secondary' }, (I18N[lang] || I18N.en).dataset),
-									e('button', {
-										className: 'btn btn-sm btn-outline-primary', onClick: async () => {
-											try {
-												const cached = await localforage.getItem('dataset:v1');
-												let j;
-												if (cached) { j = cached; }
-												else { const r = await fetch('http://localhost:5057/api/dataset'); j = await r.json(); await localforage.setItem('dataset:v1', j); }
-												alert('Dataset Loaded: ' + JSON.stringify(j).slice(0, 200) + '...');
-											} catch (e) { alert('Dataset fetch failed'); }
-										}
-									}, 'Load Dataset')
-								),
-								e('div', { id: 'datasetBar' })
-							)
-						)
-					)
-				),
-				e('div', { className: 'row g-3 mt-2' },
-					e('div', { className: 'col-12 col-lg-6' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('span', { className: 'badge bg-dark mb-2' }, 'Multi-Axis / Stacked'),
-								e('canvas', { id: 'multiAxisChart' })
-							)
-						)
-					),
-					e('div', { className: 'col-12 col-lg-6' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('span', { className: 'badge bg-info text-dark mb-2' }, 'Radar & Doughnut'),
-								e('div', { className: 'row g-2' },
-									e('div', { className: 'col-6' }, e('canvas', { id: 'radarChart' })),
-									e('div', { className: 'col-6' }, e('canvas', { id: 'doughnutChart' }))
-								)
-							)
-						)
-					)
-				),
-				e('div', { className: 'row g-3 mt-2' },
-					e('div', { className: 'col-12 col-lg-6' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('span', { className: 'badge bg-warning text-dark mb-2' }, 'Gradient Area'),
-								e('canvas', { id: 'areaChart' })
-							)
-						)
-					),
-					e('div', { className: 'col-12 col-lg-6' },
-						e('div', { className: 'card shadow-sm' },
-							e('div', { className: 'card-body' },
-								e('span', { className: 'badge bg-secondary mb-2' }, 'Sparkline & D3 Globe-ish'),
-								e('div', null,
-									e('canvas', { id: 'sparklineChart', height: 80 })
-								),
-								e('div', { id: 'd3Globe', className: 'mt-2' })
-							)
-						)
-					)
-				)
-			);
+				type();
+			});
 		}
 
-		// Render React app
-		ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+		// Render a typing message with typewriter effect
+		function renderTypingMessage(content) {
+			const el = document.createElement('div');
+			el.className = 'message assistant';
+			messagesEl.appendChild(el);
 
-		// Initialize static Chart.js sample chart
-		setTimeout(() => {
-			const ctx = document.getElementById('staticChart');
-			if (!ctx) return;
-			const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-			const data = [10, 20, 15, 25, 30];
-			if (window.staticChart) window.staticChart.destroy();
-			window.staticChart = new Chart(ctx.getContext('2d'), {
-				type: 'line',
-				data: { labels, datasets: [{ label: 'Groundwater Levels', data, borderColor: 'blue', fill: false, tension: 0.3 }] },
-				options: { responsive: true }
+			// Extract text from content array
+			let text = '';
+			if (Array.isArray(content)) {
+				content.forEach(c => {
+					if (c.type === 'text') text += c.text + '\n';
+				});
+			} else {
+				text = content;
+			}
+
+			// Apply typewriter effect
+			typeWriter(el, text.trim()).then(() => {
+				messagesEl.scrollTop = messagesEl.scrollHeight;
 			});
-			// Build a dataset bar chart via D3 (uses cache if available)
-			(async () => {
-				try {
-					let j = await localforage.getItem('dataset:v1');
-					if (!j) { const r = await fetch('http://localhost:5057/api/dataset'); j = await r.json(); await localforage.setItem('dataset:v1', j); }
-					const vals = j.levels.slice(0, 8);
-					const el = document.getElementById('datasetBar');
-					if (!el) return;
-					el.innerHTML = '';
-					const width = 500, height = 160, margin = 30;
-					const svg = d3.select(el).append('svg').attr('width', width).attr('height', height);
-					const x = d3.scaleBand().domain(vals.map((_, i) => i)).range([margin, width - margin]).padding(0.1);
-					const y = d3.scaleLinear().domain([0, d3.max(vals) || 1]).range([height - margin, margin]);
-					svg.selectAll('rect').data(vals).enter().append('rect')
-						.attr('x', (_, i) => x(i)).attr('y', d => y(d))
-						.attr('width', x.bandwidth()).attr('height', d => (height - margin) - y(d))
-						.attr('fill', '#0ea5e9');
-				} catch (_) { }
-			})();
+		}
 
-			// Advanced charts
-			const multiCtx = document.getElementById('multiAxisChart');
-			if (multiCtx) {
-				const mctx = multiCtx.getContext('2d');
-				if (window.multiAxisChart) window.multiAxisChart.destroy();
-				window.multiAxisChart = new Chart(mctx, {
-					type: 'bar',
-					data: {
-						labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-						datasets: [
-							{ label: 'Levels', data: [10, 12, 14, 13, 15, 18], backgroundColor: 'rgba(59,130,246,0.6)', stack: 'stack1', yAxisID: 'y' },
-							{ label: 'Rainfall', data: [40, 35, 30, 25, 20, 15], backgroundColor: 'rgba(16,185,129,0.6)', type: 'line', yAxisID: 'y1', tension: 0.3, borderColor: 'rgba(16,185,129,1)', fill: false }
-						]
-					},
-					options: { responsive: true, scales: { y: { stacked: true, beginAtZero: true }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } }
+		async function sendMessage() {
+			const text = promptEl.value.trim();
+			if (!text) return;
+			addMessage('user', [{ type: 'text', text: text }]);
+			promptEl.value = '';
+
+			// Create a thinking message
+			const thinking = document.createElement('div');
+			thinking.className = 'message assistant';
+			thinking.textContent = 'Thinking…';
+			messagesEl.appendChild(thinking);
+			messagesEl.scrollTop = messagesEl.scrollHeight;
+
+			try {
+				const systemPrompt = "You are a helpful assistant. Do not use any markdown formatting in your answers. Provide medium-length paragraphs and bullet points. Also your name is InfoSarthi and you are designed specifically for GroundWater data chat";
+				const body = {
+					model: MODEL,
+					messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: text }],
+					temperature: 0.7
+				};
+				const resp = await fetch(ENDPOINT, {
+					method: 'POST',
+					headers: { 'Authorization': 'Bearer ' + API_KEY, 'Content-Type': 'application/json' },
+					body: JSON.stringify(body)
 				});
+				if (!resp.ok) throw new Error(await resp.text());
+				const data = await resp.json();
+				const assistantContent = data?.choices?.[0]?.message?.content || [{ type: 'text', text: '[No response]' }];
+				thinking.remove();
+				addMessage('assistant', assistantContent);
+			} catch (e) {
+				thinking.remove();
+				addMessage('assistant', [{ type: 'text', text: 'Error: ' + e.message }]);
 			}
-
-			const radarEl = document.getElementById('radarChart');
-			if (radarEl) {
-				if (window.radarChart) window.radarChart.destroy();
-				window.radarChart = new Chart(radarEl.getContext('2d'), {
-					type: 'radar',
-					data: { labels: ['A', 'B', 'C', 'D', 'E'], datasets: [{ label: 'Index', data: [65, 59, 80, 81, 56], backgroundColor: 'rgba(99,102,241,0.2)', borderColor: 'rgba(99,102,241,1)' }] },
-					options: { responsive: true }
-				});
-			}
-
-			const doughEl = document.getElementById('doughnutChart');
-			if (doughEl) {
-				if (window.doughnutChart) window.doughnutChart.destroy();
-				window.doughnutChart = new Chart(doughEl.getContext('2d'), {
-					type: 'doughnut',
-					data: { labels: ['North', 'South', 'East', 'West'], datasets: [{ data: [30, 25, 20, 25], backgroundColor: ['#60a5fa', '#34d399', '#fbbf24', '#f472b6'] }] },
-					options: { responsive: true, cutout: '55%' }
-				});
-			}
-
-			const areaEl = document.getElementById('areaChart');
-			if (areaEl) {
-				const actx = areaEl.getContext('2d');
-				const gradient = actx.createLinearGradient(0, 0, 0, 200);
-				gradient.addColorStop(0, 'rgba(59,130,246,0.4)');
-				gradient.addColorStop(1, 'rgba(59,130,246,0)');
-				if (window.areaChart) window.areaChart.destroy();
-				window.areaChart = new Chart(actx, {
-					type: 'line',
-					data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ label: 'Trend', data: [5, 9, 7, 12, 8, 14], borderColor: '#3b82f6', backgroundColor: gradient, fill: true, tension: 0.35 }] },
-					options: { responsive: true }
-				});
-			}
-
-			const sparkEl = document.getElementById('sparklineChart');
-			if (sparkEl) {
-				if (window.sparklineChart) window.sparklineChart.destroy();
-				window.sparklineChart = new Chart(sparkEl.getContext('2d'), {
-					type: 'line',
-					data: { labels: Array.from({ length: 20 }, (_, i) => i + 1), datasets: [{ data: Array.from({ length: 20 }, (_, i) => (i * 7) % 13 + 5), borderColor: '#10b981', pointRadius: 0, borderWidth: 2 }] },
-					options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } }, elements: { line: { tension: 0.3 }, point: { radius: 0 } } }
-				});
-			}
-
-			// D3 globe-ish animated line
-			const globe = document.getElementById('d3Globe');
-			if (globe) {
-				globe.innerHTML = '';
-				const width = 300, height = 150, margin = 10;
-				const svg = d3.select(globe).append('svg').attr('width', width).attr('height', height);
-				const path = svg.append('path').attr('fill', 'none').attr('stroke', '#6366f1').attr('stroke-width', 2);
-				let t = 0;
-				function draw() {
-					const points = d3.range(0, 100).map(i => {
-						const x = margin + (i / 99) * (width - 2 * margin);
-						const y = height / 2 + Math.sin((i / 8) + t) * 30 * Math.cos(t / 2);
-						return [x, y];
-					});
-					const d = d3.line()(points);
-					path.attr('d', d);
-					t += 0.05;
-					requestAnimationFrame(draw);
-				}
-				draw();
-			}
-		}, 300);
-
-		// Plotly groundwater trends (mock)
-		window.addEventListener('load', async () => {
-			const containerId = 'plotlyTrends';
-			const host = document.createElement('div');
-			host.id = containerId;
-			const target = document.querySelector('.container');
-			if (target) {
-				const row = document.createElement('div'); row.className = 'row g-3 mt-2';
-				const col = document.createElement('div'); col.className = 'col-12';
-				const card = document.createElement('div'); card.className = 'card shadow-sm';
-				const body = document.createElement('div'); body.className = 'card-body';
-				const badge = document.createElement('span'); badge.className = 'badge bg-info text-dark mb-2'; badge.textContent = 'Plotly Trends';
-				body.appendChild(badge); body.appendChild(host); card.appendChild(body); col.appendChild(card); row.appendChild(col); target.appendChild(row);
-				const xs = Array.from({ length: 24 }, (_, i) => i + 1);
-				const y1 = xs.map(i => (i * 3) % 20 + 10);
-				const y2 = xs.map(i => (i * 5) % 25 + 8);
-				Plotly.newPlot(containerId, [{ x: xs, y: y1, type: 'scatter', mode: 'lines', name: 'Levels' }, { x: xs, y: y2, type: 'bar', name: 'Rainfall', opacity: 0.6 }], { margin: { t: 10 } }, { displayModeBar: false });
-			}
-		});
+		}
 	</script>
-	<!-- Bootstrap JS -->
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
