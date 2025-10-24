@@ -512,32 +512,43 @@ Make sure your chart code:
 		}
 
 
-	
 		function processChartBlocks(container) {
 			container.querySelectorAll('pre code').forEach(codeEl => {
+				// Check if the language is javascript and it contains Chart.js keywords
 				if (codeEl.className.includes('language-javascript') && codeEl.textContent.includes('new Chart')) {
 					const parent = codeEl.closest('pre');
-					if (parent.dataset.processedChart) return;
-					parent.dataset.processedChart = true;
+
+					// FIX 5: Prevent re-processing and ensure chart is processed only once
+					if (parent.dataset.processedChart) {
+						return;
+					}
+					parent.dataset.processedChart = true; // Mark as processed
 
 					const div = document.createElement('div');
 					div.className = 'chart-container';
 					const canvas = document.createElement('canvas');
 					div.appendChild(canvas);
+
+					// FIX 6: Hide the original code block
 					parent.style.display = 'none';
+
+					// Insert the chart container *after* the code block
 					parent.insertAdjacentElement('afterend', div);
 
 					try {
-						// FIX: Rename function parameter to 'c' instead of 'ctx'
-						new Function('c', 'Chart', codeEl.textContent)(canvas.getContext('2d'), Chart);
+						// Execute the chart code
+						// The Function constructor provides a cleaner execution environment
+						new Function('ctx', 'Chart', codeEl.textContent)(canvas.getContext('2d'), Chart);
 					} catch (e) {
 						console.error('Chart.js Error:', e);
 						div.innerHTML = `<div class="chart-error"><strong>Chart Error:</strong> ${e.message}</div>`;
+						// If it fails, show the code block again for debugging
 						parent.style.display = 'block';
 					}
 				}
 			});
 		}
+
 		/**
 		 * Adds a message to chatData and renders it (for user messages).
 		 */
